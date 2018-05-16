@@ -1,9 +1,9 @@
-package vrealize
+package api
 
 import "fmt"
 
-//APIError struct is used to store REST call errors
-type APIError struct {
+//Error struct is used to store REST call errors
+type Error struct {
 	Errors []struct {
 		Code          int    `json:"code"`
 		Message       string `json:"message"`
@@ -11,10 +11,10 @@ type APIError struct {
 	} `json:"errors"`
 }
 
-func (e APIError) Error() string {
+func (e Error) Error() string {
 	return fmt.Sprintf("vRealize API: %+v", e.Errors)
 }
 
-func (e APIError) isEmpty() bool {
+func (e Error) isEmpty() bool {
 	return len(e.Errors) == 0
 }

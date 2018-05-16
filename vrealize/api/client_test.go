@@ -1,4 +1,4 @@
-package vrealize
+package api
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var client APIClient
+var client Client
 
 func init() {
 	t := new(testing.T)

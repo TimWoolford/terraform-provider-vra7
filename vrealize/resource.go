@@ -8,84 +8,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/vmware/terraform-provider-vra7/vrealize/api"
 )
-
-//ResourceViewsTemplate - is used to store information
-//related to resource template information.
-type ResourceViewsTemplate struct {
-	Content []struct {
-		ResourceID   string `json:"resourceId"`
-		RequestState string `json:"requestState"`
-		Links        []struct {
-			Href string `json:"href"`
-			Rel  string `json:"rel"`
-		} `json:"links"`
-	} `json:"content"`
-	Links []interface{} `json:"links"`
-}
-
-//RequestStatusView - used to store REST response of
-//request triggered against any resource.
-type RequestStatusView struct {
-	RequestCompletion struct {
-		RequestCompletionState string `json:"requestCompletionState"`
-		CompletionDetails      string `json:"CompletionDetails"`
-	} `json:"requestCompletion"`
-	Phase string `json:"phase"`
-}
-
-//RequestMachineResponse - used to store response of request
-//created against machine provision.
-type RequestMachineResponse struct {
-	ID           string      `json:"id"`
-	IconID       string      `json:"iconId"`
-	Version      int         `json:"version"`
-	State        string      `json:"state"`
-	Description  string      `json:"description"`
-	Reasons      interface{} `json:"reasons"`
-	RequestedFor string      `json:"requestedFor"`
-	RequestedBy  string      `json:"requestedBy"`
-	Organization struct {
-		TenantRef      string `json:"tenantRef"`
-		TenantLabel    string `json:"tenantLabel"`
-		SubtenantRef   string `json:"subtenantRef"`
-		SubtenantLabel string `json:"subtenantLabel"`
-	} `json:"organization"`
-
-	RequestorEntitlementID   string                 `json:"requestorEntitlementId"`
-	PreApprovalID            string                 `json:"preApprovalId"`
-	PostApprovalID           string                 `json:"postApprovalId"`
-	DateCreated              time.Time              `json:"dateCreated"`
-	LastUpdated              time.Time              `json:"lastUpdated"`
-	DateSubmitted            time.Time              `json:"dateSubmitted"`
-	DateApproved             time.Time              `json:"dateApproved"`
-	DateCompleted            time.Time              `json:"dateCompleted"`
-	Quote                    interface{}            `json:"quote"`
-	RequestData              map[string]interface{} `json:"requestData"`
-	RequestCompletion        string                 `json:"requestCompletion"`
-	RetriesRemaining         int                    `json:"retriesRemaining"`
-	RequestedItemName        string                 `json:"requestedItemName"`
-	RequestedItemDescription string                 `json:"requestedItemDescription"`
-	Components               string                 `json:"components"`
-	StateName                string                 `json:"stateName"`
-
-	CatalogItemProviderBinding struct {
-		BindingID   string `json:"bindingId"`
-		ProviderRef struct {
-			ID    string `json:"id"`
-			Label string `json:"label"`
-		} `json:"providerRef"`
-	} `json:"catalogItemProviderBinding"`
-
-	Phase           string `json:"phase"`
-	ApprovalStatus  string `json:"approvalStatus"`
-	ExecutionStatus string `json:"executionStatus"`
-	WaitingStatus   string `json:"waitingStatus"`
-	CatalogItemRef  struct {
-		ID    string `json:"id"`
-		Label string `json:"label"`
-	} `json:"catalogItemRef"`
-}
 
 //ResourceMachine - use to set resource fields
 func ResourceMachine() *schema.Resource {
@@ -181,7 +105,7 @@ func changeTemplateValue(templateInterface map[string]interface{}, field string,
 func createResource(d *schema.ResourceData, meta interface{}) error {
 	//Log file handler to generate logs for debugging purpose
 	//Get client handle
-	client := meta.(*APIClient)
+	client := meta.(*api.Client)
 
 	//If catalog_name and catalog_id both not provided then throw an error
 	if len(d.Get("catalog_name").(string)) <= 0 && len(d.Get("catalog_id").(string)) <= 0 {
@@ -191,7 +115,7 @@ func createResource(d *schema.ResourceData, meta interface{}) error {
 	//If catalog name is provided then get catalog ID using name for further process
 	//else if catalog id is provided then fetch catalog name
 	if len(d.Get("catalog_name").(string)) > 0 {
-		catalogID, returnErr := client.readCatalogIDByName(d.Get("catalog_name").(string))
+		catalogID, returnErr := client.ReadCatalogIDByName(d.Get("catalog_name").(string))
 		log.Printf("createResource->catalog_id %v\n", catalogID)
 		if returnErr != nil {
 			return fmt.Errorf("%v", returnErr)
@@ -203,7 +127,7 @@ func createResource(d *schema.ResourceData, meta interface{}) error {
 		}
 		d.Set("catalog_id", catalogID.(string))
 	} else if len(d.Get("catalog_id").(string)) > 0 {
-		CatalogName, nameError := client.readCatalogNameByID(d.Get("catalog_id").(string))
+		CatalogName, nameError := client.ReadCatalogNameByID(d.Get("catalog_id").(string))
 		if nameError != nil {
 			return fmt.Errorf("%v", nameError)
 		}
@@ -340,7 +264,7 @@ func readResource(d *schema.ResourceData, meta interface{}) error {
 	//Get requester machine ID from schema.dataresource
 	requestMachineID := d.Id()
 	//Get client handle
-	client := meta.(*APIClient)
+	client := meta.(*api.Client)
 	//Get requested status
 	resourceTemplate, errTemplate := client.GetRequestStatus(requestMachineID)
 
@@ -364,7 +288,7 @@ func deleteResource(d *schema.ResourceData, meta interface{}) error {
 	//Get requester machine ID from schema.dataresource
 	requestMachineID := d.Id()
 	//Get client handle
-	client := meta.(*APIClient)
+	client := meta.(*api.Client)
 
 	//Through an error if request ID has no value or empty value
 	if len(d.Id()) == 0 {
@@ -401,124 +325,4 @@ func deleteResource(d *schema.ResourceData, meta interface{}) error {
 	//If resource got deleted then unset the resource ID from state file
 	d.SetId("")
 	return nil
-}
-
-//DestroyMachine - To set resource destroy call
-func (c *APIClient) DestroyMachine(destroyTemplate *ActionTemplate, resourceViewTemplate *ResourceViewsTemplate) (*ActionResponseTemplate, error) {
-	//Get a destroy template URL from given resource template
-	var destroyactionURL string
-	destroyactionURL = getactionURL(resourceViewTemplate, "POST: {com.vmware.csp.component.cafe.composition@resource.action.deployment.destroy.name}")
-	//Raise an error if any exception raised while fetching delete resource URL
-	if len(destroyactionURL) == 0 {
-		return nil, fmt.Errorf("Resource is not created or not found")
-	}
-
-	actionResponse := new(ActionResponseTemplate)
-	apiError := new(APIError)
-
-	//Set a REST call with delete resource request and delete resource template as a data
-	resp, err := c.HTTPClient.New().Post(destroyactionURL).
-		BodyJSON(destroyTemplate).Receive(actionResponse, apiError)
-
-	if resp.StatusCode != 201 {
-		return nil, err
-	}
-
-	if !apiError.isEmpty() {
-		return nil, apiError
-	}
-
-	return actionResponse, nil
-}
-
-//PowerOffMachine - To set resource power-off call
-func (c *APIClient) PowerOffMachine(powerOffTemplate *ActionTemplate, resourceViewTemplate *ResourceViewsTemplate) (*ActionResponseTemplate, error) {
-	//Get power-off resource URL from given template
-	var powerOffMachineactionURL string
-	powerOffMachineactionURL = getactionURL(resourceViewTemplate, "POST: {com.vmware.csp.component.iaas.proxy.provider@resource.action.name.machine.PowerOff}")
-	//Raise an exception if error got while fetching URL
-	if len(powerOffMachineactionURL) == 0 {
-		return nil, fmt.Errorf("resource is not created or not found")
-	}
-
-	actionResponse := new(ActionResponseTemplate)
-	apiError := new(APIError)
-
-	//Set a rest call to power-off the resource with resource power-off template as a data
-	response, err := c.HTTPClient.New().Post(powerOffMachineactionURL).
-		BodyJSON(powerOffTemplate).Receive(actionResponse, apiError)
-
-	response.Close = true
-	if response.StatusCode == 201 {
-		return actionResponse, nil
-	}
-
-	if !apiError.isEmpty() {
-		return nil, apiError
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return nil, err
-}
-
-//GetRequestStatus - To read request status of resource
-// which is used to show information to user post create call.
-func (c *APIClient) GetRequestStatus(ResourceID string) (*RequestStatusView, error) {
-	//Form a URL to read request status
-	path := fmt.Sprintf("catalog-service/api/consumer/requests/%s", ResourceID)
-	RequestStatusViewTemplate := new(RequestStatusView)
-	apiError := new(APIError)
-	//Set a REST call and fetch a resource request status
-	_, err := c.HTTPClient.New().Get(path).Receive(RequestStatusViewTemplate, apiError)
-	if err != nil {
-		return nil, err
-	}
-	if !apiError.isEmpty() {
-		return nil, apiError
-	}
-	return RequestStatusViewTemplate, nil
-}
-
-//GetResourceViews - To read resource configuration
-func (c *APIClient) GetResourceViews(ResourceID string) (*ResourceViewsTemplate, error) {
-	//Form an URL to fetch resource list view
-	path := fmt.Sprintf("catalog-service/api/consumer/requests/%s"+
-		"/resourceViews", ResourceID)
-	resourceViewsTemplate := new(ResourceViewsTemplate)
-	apiError := new(APIError)
-	//Set a REST call to fetch resource view data
-	_, err := c.HTTPClient.New().Get(path).Receive(resourceViewsTemplate, apiError)
-	if err != nil {
-		return nil, err
-	}
-	if !apiError.isEmpty() {
-		return nil, apiError
-	}
-	return resourceViewsTemplate, nil
-}
-
-//RequestMachine - To set create resource REST call
-func (c *APIClient) RequestMachine(template *CatalogItemTemplate) (*RequestMachineResponse, error) {
-	//Form a path to set a REST call to create a machine
-	path := fmt.Sprintf("/catalog-service/api/consumer/entitledCatalogItems/%s"+
-		"/requests", template.CatalogItemID)
-
-	requestMachineRes := new(RequestMachineResponse)
-	apiError := new(APIError)
-	//Set a REST call to create a machine
-	_, err := c.HTTPClient.New().Post(path).BodyJSON(template).
-		Receive(requestMachineRes, apiError)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if !apiError.isEmpty() {
-		return nil, apiError
-	}
-
-	return requestMachineRes, nil
 }

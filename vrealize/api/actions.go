@@ -1,4 +1,4 @@
-package vrealize
+package api
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ type ActionTemplate struct {
 }
 
 //GetActionTemplate - set call for read template/blueprint
-func (c *APIClient) GetActionTemplate(resourceViewsTemplate *ResourceViewsTemplate, actionURLString string) (*ActionTemplate, *ResourceViewsTemplate, error) {
+func (c *Client) GetActionTemplate(resourceViewsTemplate *ResourceViewsTemplate, actionURLString string) (*ActionTemplate, *ResourceViewsTemplate, error) {
 	//Fetch an action URL from given template
 	actionURL := getactionURL(resourceViewsTemplate, actionURLString)
 
@@ -30,7 +30,7 @@ func (c *APIClient) GetActionTemplate(resourceViewsTemplate *ResourceViewsTempla
 	}
 
 	actionTemplate := new(ActionTemplate)
-	apiError := new(APIError)
+	apiError := new(Error)
 
 	//Set a REST call to perform an action on resource
 	_, err := c.HTTPClient.New().Get(actionURL).Receive(actionTemplate, apiError)
@@ -67,7 +67,7 @@ func getactionURL(template *ResourceViewsTemplate, relationVal string) (template
 }
 
 //GetPowerOffActionTemplate - To read power-off action template from provided resource configuration
-func (c *APIClient) GetPowerOffActionTemplate(resourceViewsTemplate *ResourceViewsTemplate) (*ActionTemplate, *ResourceViewsTemplate, error) {
+func (c *Client) GetPowerOffActionTemplate(resourceViewsTemplate *ResourceViewsTemplate) (*ActionTemplate, *ResourceViewsTemplate, error) {
 	//Set resource power-off URL label
 	actionURL := "GET Template: {com.vmware.csp.component.iaas.proxy.provider@resource.action.name.machine.PowerOff}"
 	//Set get action URL function call
@@ -75,7 +75,7 @@ func (c *APIClient) GetPowerOffActionTemplate(resourceViewsTemplate *ResourceVie
 }
 
 //GetDestroyActionTemplate - To read destroy resource action template from provided resource configuration
-func (c *APIClient) GetDestroyActionTemplate(resourceViewsTemplate *ResourceViewsTemplate) (*ActionTemplate, *ResourceViewsTemplate, error) {
+func (c *Client) GetDestroyActionTemplate(resourceViewsTemplate *ResourceViewsTemplate) (*ActionTemplate, *ResourceViewsTemplate, error) {
 	//Set destroy resource URL label
 	actionURL := "GET Template: {com.vmware.csp.component.cafe.composition@resource.action.deployment.destroy.name}"
 	//Set get action URL function call

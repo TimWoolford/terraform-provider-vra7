@@ -1,4 +1,4 @@
-package vrealize
+package api
 
 import (
 	"crypto/tls"
@@ -10,10 +10,10 @@ import (
 	"github.com/dghubble/sling"
 )
 
-//APIClient - This struct is used to store information provided in .tf file under provider block
+//Client - This struct is used to store information provided in .tf file under provider block
 //Later on, this stores bearToken after successful authentication and uses that token for next
 //REST get or post calls.
-type APIClient struct {
+type Client struct {
 	Username    string
 	Password    string
 	BaseURL     string
@@ -44,14 +44,14 @@ type ActionResponseTemplate struct {
 
 //NewClient - set provider authentication details in struct
 //which will be used for all REST call authentication
-func NewClient(username string, password string, tenant string, baseURL string, insecure bool) APIClient {
+func NewClient(username string, password string, tenant string, baseURL string, insecure bool) Client {
 	// This overrides the DefaultTransport which is probably ok
 	// since we're generally only using a single client.
 	transport := http.DefaultTransport.(*http.Transport)
 	transport.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: insecure,
 	}
-	return APIClient{
+	return Client{
 		Username: username,
 		Password: password,
 		Tenant:   tenant,
@@ -64,7 +64,7 @@ func NewClient(username string, password string, tenant string, baseURL string, 
 }
 
 //Authenticate - set call for user authentication
-func (c *APIClient) Authenticate() error {
+func (c *Client) Authenticate() error {
 	//Set user credentials details as a parameter to authenticate user
 	params := &AuthRequest{
 		Username: c.Username,
@@ -73,7 +73,7 @@ func (c *APIClient) Authenticate() error {
 	}
 
 	authRes := new(AuthResponse)
-	apiError := new(APIError)
+	apiError := new(Error)
 	//Set a REST call to generate token using above user credentials
 	_, err := c.HTTPClient.New().Post("/identity/api/tokens").BodyJSON(params).
 		Receive(authRes, apiError)

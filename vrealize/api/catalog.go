@@ -1,4 +1,4 @@
-package vrealize
+package api
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ type CatalogItem struct {
 }
 
 //GetCatalogItem - set call to read catalog item provided in terraform config file
-func (c *APIClient) GetCatalogItem(uuid string) (*CatalogItemTemplate, error) {
+func (c *Client) GetCatalogItem(uuid string) (*CatalogItemTemplate, error) {
 	//Form a path to read catalog template via REST call
 	path := fmt.Sprintf("/catalog-service/api/consumer/entitledCatalogItems/"+
 		"%s/requests/template",
@@ -38,7 +38,7 @@ func (c *APIClient) GetCatalogItem(uuid string) (*CatalogItemTemplate, error) {
 	log.Printf("GetCatalogItem->path %v\n", path)
 
 	template := new(CatalogItemTemplate)
-	apiError := new(APIError)
+	apiError := new(Error)
 	//Set REST call to get catalog template
 	_, err := c.HTTPClient.New().Get(path).Receive(template, apiError)
 
@@ -66,13 +66,13 @@ type Metadata struct {
 }
 
 //readCatalogNameById - To read name of catalog from vRA using catalog_name
-func (c *APIClient) readCatalogNameByID(catalogID string) (interface{}, error) {
+func (c *Client) ReadCatalogNameByID(catalogID string) (interface{}, error) {
 	//Form a path to read catalog template via REST call
 	path := fmt.Sprintf("/catalog-service/api/consumer/entitledCatalogItems/"+
 		"%s", catalogID)
 
 	template := new(CatalogItem)
-	apiError := new(APIError)
+	apiError := new(Error)
 	//Set REST call to get catalog template
 	_, err := c.HTTPClient.New().Get(path).Receive(template, apiError)
 
@@ -88,7 +88,7 @@ func (c *APIClient) readCatalogNameByID(catalogID string) (interface{}, error) {
 }
 
 //readCatalogIdByName - To read id of catalog from vRA using catalog_name
-func (c *APIClient) readCatalogIDByName(catalogName string) (interface{}, error) {
+func (c *Client) ReadCatalogIDByName(catalogName string) (interface{}, error) {
 	var catalogID string
 
 	log.Printf("readCatalogIdByName->catalog_name %v\n", catalogName)
@@ -97,7 +97,7 @@ func (c *APIClient) readCatalogIDByName(catalogName string) (interface{}, error)
 	path := fmt.Sprintf("catalog-service/api/consumer/entitledCatalogItemViews")
 
 	template := new(entitledCatalogItemViews)
-	apiError := new(APIError)
+	apiError := new(Error)
 
 	_, preErr := c.HTTPClient.New().Get(path).Receive(template, apiError)
 
