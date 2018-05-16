@@ -2,11 +2,34 @@ package api
 
 import "fmt"
 
+//RequestMachine - To set create resource REST call
+func (c *Client) RequestMachine(template *CatalogItemTemplate) (*RequestMachineResponse, error) {
+	//Form a path to set a REST call to create a machine
+	path := fmt.Sprintf("/catalog-service/api/consumer/entitledCatalogItems/%s"+
+		"/requests", template.CatalogItemID)
+
+	requestMachineRes := new(RequestMachineResponse)
+	apiError := new(Error)
+	//Set a REST call to create a machine
+	_, err := c.HTTPClient.New().Post(path).BodyJSON(template).
+		Receive(requestMachineRes, apiError)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !apiError.isEmpty() {
+		return nil, apiError
+	}
+
+	return requestMachineRes, nil
+}
+
 //DestroyMachine - To set resource destroy call
 func (c *Client) DestroyMachine(destroyTemplate *ActionTemplate, resourceViewTemplate *ResourceViewsTemplate) (*ActionResponseTemplate, error) {
 	//Get a destroy template URL from given resource template
 	var destroyactionURL string
-	destroyactionURL = getactionURL(resourceViewTemplate, "POST: {com.vmware.csp.component.cafe.composition@resource.action.deployment.destroy.name}")
+	destroyactionURL = getActionURL(resourceViewTemplate, "POST: {com.vmware.csp.component.cafe.composition@resource.action.deployment.destroy.name}")
 	//Raise an error if any exception raised while fetching delete resource URL
 	if len(destroyactionURL) == 0 {
 		return nil, fmt.Errorf("Resource is not created or not found")
@@ -34,7 +57,7 @@ func (c *Client) DestroyMachine(destroyTemplate *ActionTemplate, resourceViewTem
 func (c *Client) PowerOffMachine(powerOffTemplate *ActionTemplate, resourceViewTemplate *ResourceViewsTemplate) (*ActionResponseTemplate, error) {
 	//Get power-off resource URL from given template
 	var powerOffMachineactionURL string
-	powerOffMachineactionURL = getactionURL(resourceViewTemplate, "POST: {com.vmware.csp.component.iaas.proxy.provider@resource.action.name.machine.PowerOff}")
+	powerOffMachineactionURL = getActionURL(resourceViewTemplate, "POST: {com.vmware.csp.component.iaas.proxy.provider@resource.action.name.machine.PowerOff}")
 	//Raise an exception if error got while fetching URL
 	if len(powerOffMachineactionURL) == 0 {
 		return nil, fmt.Errorf("resource is not created or not found")

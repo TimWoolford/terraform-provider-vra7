@@ -37,26 +37,3 @@ func (c *Client) GetResourceViews(ResourceID string) (*ResourceViewsTemplate, er
 	}
 	return resourceViewsTemplate, nil
 }
-
-//RequestMachine - To set create resource REST call
-func (c *Client) RequestMachine(template *CatalogItemTemplate) (*RequestMachineResponse, error) {
-	//Form a path to set a REST call to create a machine
-	path := fmt.Sprintf("/catalog-service/api/consumer/entitledCatalogItems/%s"+
-		"/requests", template.CatalogItemID)
-
-	requestMachineRes := new(RequestMachineResponse)
-	apiError := new(Error)
-	//Set a REST call to create a machine
-	_, err := c.HTTPClient.New().Post(path).BodyJSON(template).
-		Receive(requestMachineRes, apiError)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if !apiError.isEmpty() {
-		return nil, apiError
-	}
-
-	return requestMachineRes, nil
-}

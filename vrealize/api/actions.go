@@ -22,7 +22,7 @@ type ActionTemplate struct {
 //GetActionTemplate - set call for read template/blueprint
 func (c *Client) GetActionTemplate(resourceViewsTemplate *ResourceViewsTemplate, actionURLString string) (*ActionTemplate, *ResourceViewsTemplate, error) {
 	//Fetch an action URL from given template
-	actionURL := getactionURL(resourceViewsTemplate, actionURLString)
+	actionURL := getActionURL(resourceViewsTemplate, actionURLString)
 
 	//Raise an error if action URL not found
 	if len(actionURL) == 0 {
@@ -46,8 +46,8 @@ func (c *Client) GetActionTemplate(resourceViewsTemplate *ResourceViewsTemplate,
 	return actionTemplate, resourceViewsTemplate, nil
 }
 
-//getactionURL - Read action URL from provided template of resource item
-func getactionURL(template *ResourceViewsTemplate, relationVal string) (templateactionURL string) {
+//getActionURL - Read action URL from provided template of resource item
+func getActionURL(template *ResourceViewsTemplate, relationVal string) string {
 	var actionURL string
 	l := len(template.Content)
 	//Loop to iterate over the action URLs
@@ -62,7 +62,6 @@ func getactionURL(template *ResourceViewsTemplate, relationVal string) (template
 		}
 
 	}
-	//Return action URL
 	return actionURL
 }
 

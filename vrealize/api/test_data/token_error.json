@@ -1,0 +1,11 @@
+{
+  "errors": [
+    {
+      "code": 90135,
+      "source": null,
+      "message": "Unable to authenticate user jason@corp.local1 in tenant vsphere.local.",
+      "systemMessage": "90135-Unable to authenticate user jason@corp.local1 in tenant vsphere.local.",
+      "moreInfoUrl": null
+    }
+  ]
+}
